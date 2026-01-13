@@ -2,6 +2,20 @@
 // This program allows users to prove credentials (e.g., citizenship over 18)
 // from signed data attestations without revealing the underlying data.
 
+// ⚠️ SECURITY NOTE - Phase 1 Implementation:
+// This Phase 1 implementation demonstrates the privacy-preserving verification
+// logic and zero-knowledge proof capabilities. The credential structure includes
+// signature fields, but actual signature verification is deferred to Phase 2.
+//
+// PRODUCTION REQUIREMENTS (Phase 2):
+// - Implement full signature verification using Aleo's cryptographic primitives
+// - Establish trusted issuer registry on-chain
+// - Add credential revocation mechanisms
+// - Implement time-based expiration
+//
+// DO NOT use this Phase 1 code in production without implementing signature
+// verification. Without signature checks, credentials can be forged.
+
 program zkidentity.aleo {
     // ========== PHASE 1: Basic Identity Verification ==========
     
@@ -30,8 +44,21 @@ program zkidentity.aleo {
 
     // Phase 1 Transition: Verify that a user is over a certain age without revealing exact age
     // This function checks:
-    // 1. The credential signature is valid (proving it was issued by a trusted authority)
-    // 2. The age attribute meets the minimum requirement (e.g., >= 18)
+    // 1. The age attribute meets the minimum requirement (e.g., >= 18)
+    //
+    // ⚠️ SECURITY NOTE: Signature verification not implemented in Phase 1
+    // Phase 2 will add proper signature verification to ensure credentials are
+    // issued by trusted authorities. The structure is prepared for this enhancement.
+    // 
+    // Future signature verification will use:
+    //   let message: field = BHP256::hash_to_field(credential.attribute);
+    //   let is_valid_sig: bool = signature::verify(
+    //       issuer_pubkey,
+    //       message,
+    //       credential.signature_r,
+    //       credential.signature_s
+    //   );
+    //   assert(is_valid_sig);
     transition verify_age_over_threshold(
         credential: Credential,
         issuer_pubkey: address,
@@ -40,25 +67,18 @@ program zkidentity.aleo {
         // Verify the age is greater than or equal to the threshold
         let age_valid: bool = credential.attribute >= threshold;
         
-        // In a real implementation, we would verify the signature here
-        // For Phase 1, we demonstrate the structure and basic validation
-        // The signature verification would use BHP256 hash and signature.verify_core
+        // ⚠️ Phase 1: Signature verification deferred to Phase 2
+        // This demonstrates the verification logic and privacy properties.
+        // Production systems MUST implement signature verification before deployment.
         
-        // Note: Full signature verification would look like:
-        // let message: field = BHP256::hash_to_field(credential.attribute);
-        // let is_valid_sig: bool = signature::verify(
-        //     issuer_pubkey,
-        //     message,
-        //     credential.signature_r,
-        //     credential.signature_s
-        // );
-        
-        // For Phase 1 demonstration, we return age validation result
         return age_valid;
     }
 
     // Phase 1 Transition: Verify citizenship status
     // Returns true if the credential proves citizenship (attribute = 1)
+    //
+    // ⚠️ SECURITY NOTE: Signature verification not implemented in Phase 1
+    // Production deployment requires signature verification in Phase 2.
     transition verify_citizenship(
         credential: Credential,
         issuer_pubkey: address
@@ -66,8 +86,8 @@ program zkidentity.aleo {
         // Citizenship is represented as 1 for citizen, 0 for non-citizen
         let is_citizen: bool = credential.attribute == 1u64;
         
-        // In production, verify signature here as well
-        // For demonstration purposes, we show the structure
+        // ⚠️ Phase 1: Signature verification deferred to Phase 2
+        // Production systems MUST verify signature before accepting credentials.
         
         return is_citizen;
     }
