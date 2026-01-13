@@ -17,21 +17,29 @@ The initial implementation provides foundational credential verification capabil
 - **Combined Verification**: Prove multiple credentials simultaneously (e.g., citizen over 18)
 - **Signature-Ready Structure**: Credentials include signature components for future attestation verification
 
-### Phase 2: Advanced Credential Verification (Coming Soon)
+### Phase 2: Advanced Credential Verification ✅
 
-- Merkle tree verification for credential sets
-- Functions for verifying multiple attributes
-- Nullifier system to prevent double-spending
+Phase 2 introduces Merkle tree verification and nullifier tracking for preventing double-usage:
 
-### Phase 3: Privacy-Preserving Identity Proofs (Coming Soon)
+- **Merkle Tree Verification**: Credentials stored in depth-32 Merkle trees using Poseidon hashing with domain separation
+- **Nullifier System**: Prevents credential reuse through on-chain nullifier tracking
+- **Enhanced Data Structures**: `CredentialLeaf`, `MerkleProof`, and `Nullifier` structs for advanced verification
+- **Merkle Transitions**: `verify_age_over_threshold_merkle` and `verify_citizenship_merkle` with nullifier checks
 
-- Zero-knowledge proofs for selective disclosure
-- Credential aggregation functions
-- Verifier contracts
+### Phase 3: Privacy-Preserving Identity Proofs ✅
+
+Phase 3 adds advanced privacy-preserving features:
+
+- **Multi-Attribute Verification**: Verify multiple attributes from the same credential tree in one transaction
+- **Selective Disclosure**: Prove membership while only revealing selected attributes
+- **Aggregated Credentials**: Batch verify multiple credentials from different issuers/trees
+- **Advanced Privacy**: Minimal data exposure with maximum verification flexibility
 
 ## Architecture
 
 ### Credential Structure
+
+#### Phase 1: Basic Credential
 
 ```leo
 struct Credential {
@@ -41,11 +49,51 @@ struct Credential {
 }
 ```
 
+#### Phase 2: Enhanced Credential Leaf
+
+```leo
+struct CredentialLeaf {
+    attr_type: u64,        // Type of attribute (1=age, 2=citizenship, etc.)
+    attr_value: u64,       // Value of the attribute
+    signature_r: scalar,   // Signature component r
+    signature_s: scalar    // Signature component s
+}
+
+struct MerkleProof {
+    siblings: [field; 32], // 32 sibling hashes for depth-32 tree
+    index: u64            // Leaf index in the tree
+}
+
+struct Nullifier {
+    value: field          // Derived nullifier value
+}
+```
+
 ### Core Transitions
+
+#### Phase 1: Basic Verification
 
 1. **verify_age_over_threshold**: Verifies age credential meets minimum threshold
 2. **verify_citizenship**: Verifies citizenship status
 3. **verify_citizen_over_18**: Combined verification of age and citizenship
+
+#### Phase 2: Merkle Tree & Nullifiers
+
+4. **verify_age_over_threshold_merkle**: Verify age with Merkle proof and nullifier tracking
+5. **verify_citizenship_merkle**: Verify citizenship with Merkle proof and nullifier tracking
+
+#### Phase 3: Advanced Privacy Proofs
+
+6. **verify_multi_attributes**: Verify multiple attributes from the same tree
+7. **verify_selective_disclosure**: Verify membership with selective attribute disclosure
+8. **verify_aggregated_credentials**: Batch verify credentials from different trees
+
+### Utility Functions
+
+- **hash_leaf**: Poseidon hash for credential leaves with domain separation (tag=1)
+- **hash_node**: Poseidon hash for internal Merkle nodes with domain separation (tag=2)
+- **compute_merkle_root**: Recompute Merkle root from leaf and 32-level proof
+- **derive_nullifier**: Derive nullifier from credential_id + secret with domain separation (tag=3)
 
 ## Usage
 
@@ -63,6 +111,8 @@ leo build
 ```
 
 ### Running Transitions
+
+#### Phase 1: Basic Verification
 
 #### Verify Age Over Threshold
 
@@ -95,6 +145,62 @@ leo run verify_citizen_over_18 \
 ```
 
 Output: `true` (citizen AND age >= 18)
+
+#### Phase 2: Merkle Tree Verification
+
+#### Verify Age with Merkle Proof
+
+```bash
+leo run verify_age_over_threshold_merkle \
+  "{attr_type: 1u64, attr_value: 25u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [0field, 0field, /* ... 32 fields */], index: 0u64}" \
+  "123456789field" \
+  "18u64" \
+  "1field" \
+  "12345field"
+```
+
+Verifies age >= 18 using Merkle proof and prevents reuse via nullifier.
+
+#### Phase 3: Multi-Attribute Verification
+
+```bash
+leo run verify_multi_attributes \
+  "{attr_type: 1u64, attr_value: 25u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [...], index: 0u64}" \
+  "{attr_type: 2u64, attr_value: 1u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [...], index: 1u64}" \
+  "{attr_type: 3u64, attr_value: 100u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [...], index: 2u64}" \
+  "123456789field" \
+  "1field" \
+  "12345field"
+```
+
+Verifies three attributes (age, citizenship, score) from the same credential tree.
+
+## Testing UI
+
+A comprehensive React + Vite testing interface is available in the `ui/` directory.
+
+### Features
+
+- **Interactive Testing**: Test all Phase 1, 2, and 3 transitions
+- **Merkle Tree Visualization**: Visual representation of depth-32 Merkle trees
+- **Nullifier Tracker**: Track and manage nullifiers
+- **Command Generation**: Automatically generate Leo commands for testing
+
+### Quick Start
+
+```bash
+cd ui
+npm install
+npm run dev
+```
+
+Visit `http://localhost:5173` to access the testing UI.
+
+For more details, see [ui/README.md](ui/README.md).
 
 ## Testing
 
@@ -157,8 +263,9 @@ let is_valid: bool = signature::verify(
 ## Roadmap
 
 - [x] Phase 1: Basic identity verification with signature structure
-- [ ] Phase 2: Merkle tree verification and nullifiers
-- [ ] Phase 3: Advanced ZK proofs and credential aggregation
+- [x] Phase 2: Merkle tree verification and nullifiers
+- [x] Phase 3: Advanced ZK proofs and credential aggregation
+- [x] Testing UI: React/Vite interface for testing all features
 - [ ] Phase 4: Production deployment and issuer integration
 - [ ] Phase 5: Mobile SDK and user-facing applications
 
