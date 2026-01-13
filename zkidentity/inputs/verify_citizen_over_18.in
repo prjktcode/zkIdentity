@@ -1,0 +1,15 @@
+// Input file for verify_citizen_over_18 transition
+// Tests combined verification of citizenship and age >= 18
+
+[verify_citizen_over_18]
+age_credential: Credential = Credential {
+    attribute: 25u64,
+    signature_r: 0scalar,
+    signature_s: 0scalar
+};
+citizenship_credential: Credential = Credential {
+    attribute: 1u64,
+    signature_r: 0scalar,
+    signature_s: 0scalar
+};
+issuer_pubkey: address = aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc;
