@@ -1,0 +1,11 @@
+// Input file for verify_age_over_threshold transition
+// Tests verification of age >= 18
+
+[verify_age_over_threshold]
+credential: Credential = Credential {
+    attribute: 25u64,
+    signature_r: 0scalar,
+    signature_s: 0scalar
+};
+issuer_pubkey: address = aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc;
+threshold: u64 = 18u64;

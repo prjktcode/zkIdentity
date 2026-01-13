@@ -1,0 +1,10 @@
+// Input file for verify_citizenship transition
+// Tests verification of citizenship status
+
+[verify_citizenship]
+credential: Credential = Credential {
+    attribute: 1u64,
+    signature_r: 0scalar,
+    signature_s: 0scalar
+};
+issuer_pubkey: address = aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc;
