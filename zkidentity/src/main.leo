@@ -30,6 +30,9 @@ program zkidentity.aleo {
     }
 
     // Struct to represent the issuer's public key for verification
+    // Note: This struct is prepared for Phase 2 when signature verification
+    // will be implemented. It's included now to demonstrate the complete
+    // credential verification architecture.
     struct IssuerPublicKey {
         // The issuer's address (used as public key)
         issuer: address,
