@@ -414,14 +414,311 @@ def check_voting_eligibility(age_cred, citizen_cred, issuer):
 
 ## Next Steps
 
-After mastering these basic examples, explore:
+After mastering these basic examples, explore Phase 2 and Phase 3 features below.
 
-1. **Phase 2 Features** (Coming Soon):
-   - Merkle tree membership proofs
-   - Nullifier-based one-time proofs
-   - Multi-attribute verification
+---
 
-2. **Custom Integration**:
+## Phase 2: Merkle Tree Verification & Nullifiers
+
+### Example 11: Age Verification with Merkle Proof
+
+**Scenario**: Verify age using Merkle tree membership proof with nullifier tracking.
+
+```bash
+# User's credential leaf in Merkle tree
+# Merkle root represents a batch of issued credentials
+# Nullifier prevents double-usage
+
+leo run verify_age_over_threshold_merkle \
+  "{attr_type: 1u64, attr_value: 25u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [0field, 1field, 2field, /* ... 32 fields total */], index: 5u64}" \
+  "123456789field" \
+  "18u64" \
+  "credential_abc_field" \
+  "secret_12345field"
+
+# Output: Verification succeeds if:
+# 1. Leaf computes to expected Merkle root
+# 2. attr_type is 1 (age)
+# 3. attr_value >= 18
+# 4. Nullifier hasn't been used before
+
+# Benefits:
+# - Credential position in tree hidden
+# - One-time use enforced via nullifier
+# - Batch issuance efficiency
+# - Privacy from issuer (issuer doesn't know which credential is used)
+```
+
+### Example 12: Citizenship with Merkle Proof
+
+**Scenario**: Prove citizenship from credential tree with nullifier.
+
+```bash
+leo run verify_citizenship_merkle \
+  "{attr_type: 2u64, attr_value: 1u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [/* 32 sibling hashes */], index: 10u64}" \
+  "987654321field" \
+  "credential_xyz_field" \
+  "secret_67890field"
+
+# Output: Success if:
+# 1. Merkle proof valid
+# 2. attr_type is 2 (citizenship)  
+# 3. attr_value is 1 (citizen)
+# 4. Nullifier fresh (not previously used)
+
+# Benefits:
+# - Anonymous verification
+# - Prevents credential sharing
+# - Scalable (tree can hold 4B+ credentials)
+```
+
+### Example 13: Nullifier Prevention
+
+**Scenario**: Attempting to reuse a credential shows nullifier protection.
+
+```bash
+# First use - succeeds
+leo run verify_age_over_threshold_merkle \
+  "{attr_type: 1u64, attr_value: 25u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [/* ... */], index: 0u64}" \
+  "rootfield" \
+  "18u64" \
+  "cred1field" \
+  "secretfield"
+# Output: Success, nullifier stored on-chain
+
+# Second use - fails
+leo run verify_age_over_threshold_merkle \
+  "{attr_type: 1u64, attr_value: 25u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [/* ... */], index: 0u64}" \
+  "rootfield" \
+  "18u64" \
+  "cred1field" \
+  "secretfield"  
+# Output: Fails - nullifier already used
+
+# Benefits:
+# - Prevents credential reuse
+# - Anonymous (nullifier doesn't reveal credential)
+# - On-chain enforcement
+```
+
+---
+
+## Phase 3: Advanced Privacy-Preserving Proofs
+
+### Example 14: Multi-Attribute Verification
+
+**Scenario**: Prove age + citizenship + qualification in one transaction.
+
+```bash
+# Verify 3 attributes from same credential tree
+leo run verify_multi_attributes \
+  "{attr_type: 1u64, attr_value: 30u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [/* proof for leaf 0 */], index: 0u64}" \
+  "{attr_type: 2u64, attr_value: 1u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [/* proof for leaf 1 */], index: 1u64}" \
+  "{attr_type: 3u64, attr_value: 95u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [/* proof for leaf 2 */], index: 2u64}" \
+  "rootfield" \
+  "credentialfield" \
+  "secretfield"
+
+# Verifies all three against same root:
+# - Age: 30 (type 1)
+# - Citizenship: citizen (type 2, value 1)  
+# - Score: 95 (type 3)
+# Single combined nullifier for all three
+
+# Use Cases:
+# - Job application (age + citizenship + qualification)
+# - Government contracts (citizenship + security clearance + age)
+# - University admission (age + residency + test score)
+```
+
+### Example 15: Selective Disclosure
+
+**Scenario**: Prove you have a credential but only disclose selected attributes.
+
+```bash
+# Full credential has age, citizenship, income
+# Only disclose that you're a citizen (hide age and income)
+
+leo run verify_selective_disclosure \
+  "{attr_type: 2u64, attr_value: 1u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [/* ... */], index: 5u64}" \
+  "rootfield" \
+  "2u64" \
+  "1u64" \
+  "credfield" \
+  "secretfield"
+
+# Parameters:
+# - Full leaf (private)
+# - Merkle proof (public)  
+# - Root (public)
+# - Disclosed type: 2 (citizenship) - public
+# - Disclosed value: 1 (citizen) - public
+# - Other attributes remain private
+
+# Use Cases:
+# - Prove eligibility without revealing all attributes
+# - Selective KYC disclosure
+# - Privacy-preserving access control
+```
+
+### Example 16: Aggregated Credentials
+
+**Scenario**: Batch verify credentials from different issuers.
+
+```bash
+# Verify government ID (tree 1) + employer credential (tree 2)
+leo run verify_aggregated_credentials \
+  "{attr_type: 1u64, attr_value: 35u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [/* proof in tree 1 */], index: 10u64}" \
+  "root1field" \
+  "{attr_type: 5u64, attr_value: 1u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [/* proof in tree 2 */], index: 7u64}" \
+  "root2field" \
+  "cred1field" \
+  "cred2field" \
+  "secretfield"
+
+# Verifies:
+# - Credential 1 (age from government) against root1
+# - Credential 2 (employment status) against root2
+# - Separate nullifiers for each credential
+# - Both must succeed
+
+# Use Cases:
+# - Cross-issuer verification
+# - Government ID + private credential
+# - Multiple independent attestations
+```
+
+---
+
+## Real-World Scenario: Complete Voting System
+
+**Comprehensive Example**: End-to-end voting eligibility and participation.
+
+### Step 1: Initial Registration (Phase 2)
+
+```bash
+# Electoral authority issues credentials in Merkle tree
+# User receives: age credential, citizenship credential, and Merkle proofs
+
+# Verify eligibility: citizen AND age >= 18
+leo run verify_aggregated_credentials \
+  "{attr_type: 1u64, attr_value: 28u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [/* age proof */], index: 123u64}" \
+  "electoral_root_age" \
+  "{attr_type: 2u64, attr_value: 1u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [/* citizenship proof */], index: 456u64}" \
+  "electoral_root_citizenship" \
+  "voter_id_abc" \
+  "voter_id_xyz" \
+  "voter_secret"
+
+# If successful: eligible to vote
+# Nullifiers prevent double-registration
+```
+
+### Step 2: Anonymous Vote Casting (Phase 3)
+
+```bash
+# Cast vote using multi-attribute proof
+# Proves eligibility without revealing identity
+
+leo run verify_multi_attributes \
+  "{attr_type: 1u64, attr_value: 28u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [/* ... */], index: 123u64}" \
+  "{attr_type: 2u64, attr_value: 1u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [/* ... */], index: 456u64}" \
+  "{attr_type: 6u64, attr_value: 1u64, signature_r: 0scalar, signature_s: 0scalar}" \
+  "{siblings: [/* registration proof */], index: 789u64}" \
+  "electoral_root" \
+  "vote_credential" \
+  "vote_secret"
+
+# Success: Vote is cast
+# Nullifier prevents double-voting
+# Identity remains anonymous
+# Ballot secrecy maintained
+```
+
+### Benefits of This Approach:
+
+✅ **Anonymous**: Votes can't be linked to voters  
+✅ **Verifiable**: Each vote is from eligible voter  
+✅ **One-person-one-vote**: Nullifiers prevent double-voting  
+✅ **Privacy-preserving**: No personal data revealed  
+✅ **Auditable**: Merkle proofs allow verification without identity  
+✅ **Scalable**: Merkle trees support millions of voters
+
+---
+
+## Testing UI Examples
+
+The React/Vite testing UI (in `ui/` directory) provides interactive testing for all phases.
+
+### Example 17: Using the Testing UI
+
+```bash
+# Start the UI
+cd ui
+npm install
+npm run dev
+```
+
+**Phase 1 Tab**:
+- Enter age: 25
+- Enter citizenship: 1
+- Click "Test Age Verification"
+- Copy generated Leo command
+- Run in Leo environment
+
+**Phase 2 Tab**:
+- Configure credential leaf (attr_type: 1, attr_value: 25)
+- Click "Generate Sample Tree" for Merkle proof
+- Set nullifier parameters
+- Click "Test Age Verification (Merkle)"
+- View simulated nullifier in Nullifier Tracker tab
+
+**Phase 3 Tab**:
+- Configure multiple leaves for multi-attribute test
+- Set up selective disclosure parameters
+- Test aggregated credentials
+- All nullifiers tracked in real-time
+
+**Merkle Tree Viz Tab**:
+- Interactive visualization of depth-32 trees
+- See proof path for selected leaf
+- Understand Poseidon hashing with domain separation
+
+---
+
+## Next Steps
+
+## Next Steps
+
+After mastering these examples:
+
+1. **Explore the Testing UI**:
+   - Interactive testing of all phases
+   - Visual Merkle tree explorer
+   - Real-time nullifier tracking
+
+2. **Phase 2 & 3 Features** (Now Available):
+   - ✅ Merkle tree membership proofs
+   - ✅ Nullifier-based one-time proofs
+   - ✅ Multi-attribute verification
+   - ✅ Selective disclosure
+   - ✅ Aggregated credentials
+
+3. **Custom Integration**:
    - Build your own verification logic
    - Create custom credential types
    - Integrate with existing systems
