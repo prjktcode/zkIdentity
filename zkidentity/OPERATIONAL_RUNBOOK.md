@@ -597,13 +597,15 @@ Maintain log of:
 
 ## Contact Information
 
+**⚠️ TEMPLATE - Update with actual contact information before deployment**
+
 **Admin Team:**
-- Primary: admin@example.com
-- Secondary: backup-admin@example.com
+- Primary: [TODO: Set admin email]
+- Secondary: [TODO: Set backup admin email]
 
 **Escalation:**
-- On-call: +1-xxx-xxx-xxxx
-- Emergency: security@example.com
+- On-call: [TODO: Set on-call phone/contact]
+- Emergency: [TODO: Set emergency contact]
 
 **External:**
 - Aleo Support: https://discord.gg/aleo
