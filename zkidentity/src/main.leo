@@ -467,23 +467,10 @@ program zkidentity.aleo {
         public current_block_height: u32,
         revocation_proof: RevocationProof
     ) -> Future {
-        // 1. Verify issuer signature on credential
-        let sig_valid: bool = verify_credential_signature(
-            leaf.credential_id,  // We'll get issuer_pubkey from mapping in finalize
-            leaf.attr_type,
-            leaf.attr_value,
-            leaf.schema_id,
-            leaf.expiry,
-            leaf.credential_id,
-            leaf.signature_r,
-            leaf.signature_s
-        );
-        // Note: Full signature check will be done in finalize with registered issuer key
-        
-        // 2. Check expiry (credential must not be expired)
+        // 1. Check expiry (credential must not be expired)
         assert(current_block_height <= leaf.expiry);
         
-        // 3. Verify leaf is in Merkle tree
+        // 2. Verify leaf is in Merkle tree
         let leaf_hash: field = hash_leaf(
             leaf.attr_type,
             leaf.attr_value,
@@ -502,25 +489,18 @@ program zkidentity.aleo {
         
         assert_eq(computed_root, root);
         
-        // 4. Check attribute type is age (type 1)
+        // 3. Check attribute type is age (type 1)
         assert_eq(leaf.attr_type, 1u64);
         
-        // 5. Check age threshold
+        // 4. Check age threshold
         assert(leaf.attr_value >= threshold);
         
-        // 6. Check not revoked - verify credential_id is not in revocation tree
-        let is_not_revoked: bool = check_not_revoked(
-            leaf.credential_id,
-            revocation_proof.siblings,
-            revocation_proof.index,
-            0field  // Will get actual revocation_root from mapping in finalize
-        );
-        // Note: Full revocation check will be done in finalize
-        
-        // 7. Derive nullifier
+        // 5. Derive nullifier
         let nullifier: field = derive_nullifier(leaf.credential_id, nullifier_secret);
         
-        // 8. Return finalize future
+        // 6. Return finalize future
+        // Signature verification, schema validation, and revocation check
+        // will be performed in finalize using on-chain registry data
         return finalize_verify_age_merkle(
             nullifier,
             issuer_id,
