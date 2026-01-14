@@ -38,8 +38,8 @@ program zkidentity.aleo {
     }
 
     // PHASE 2 & 4: Enhanced credential structure for Merkle tree verification
-    // This structure represents a verifiable credential with all necessary components
-    // for production-grade credential verification including signatures, expiry, and schemas.
+    // Production-grade credentials with cryptographic signatures, time-bounded validity,
+    // schema validation, and revocation support for secure credential verification.
     struct CredentialLeaf {
         // Type of attribute (1=age, 2=citizenship, 3=qualification, etc.)
         // Must match the schema_id requirements
@@ -529,7 +529,7 @@ program zkidentity.aleo {
         // SECURITY: Perform all validation checks BEFORE any state changes
         // This ensures atomicity - if any check fails, no state is modified
         
-        // 1. Check nullifier hasn't been used
+        // 1. Check nullifier hasn't been used (read-only check)
         let is_used: bool = Mapping::get_or_use(nullifiers, nullifier, false);
         assert(!is_used);
         
@@ -567,7 +567,8 @@ program zkidentity.aleo {
         }
         
         // 6. All checks passed - NOW mark nullifier as used
-        // This is the only state change and happens last to ensure atomicity
+        // This is the only intentional state modification
+        // Note: get_or_use above reads with default false if not present
         Mapping::set(nullifiers, nullifier, true);
     }
 
